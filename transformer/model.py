@@ -4,8 +4,7 @@ import numpy as np
 import paddle.fluid as fluid
 import paddle.fluid.layers as layers
 
-from config import TrainTaskConfig, pos_enc_param_names, \
-    encoder_input_data_names, decoder_input_data_names, label_data_names
+from config import *
 
 
 def position_encoding_init(n_position, d_pos_vec):
@@ -507,6 +506,22 @@ def make_inputs(input_data_names,
     return input_layers
 
 
+def make_all_inputs(input_fields):
+    """
+    Define the input data layers for the transformer model.
+    """
+    inputs = []
+    for input_field in input_fields:
+        input_var = layers.data(
+            name=input_field,
+            shape=input_descs[input_field][0],
+            dtype=input_descs[input_field][1],
+            append_batch_size=False)
+        inputs.append(input_var)
+        fluid.default_startup_program().global_block().clone_variable(input_var)
+    return inputs
+
+
 def transformer(
         src_vocab_size,
         trg_vocab_size,
@@ -521,18 +536,8 @@ def transformer(
         src_pad_idx,
         trg_pad_idx,
         pos_pad_idx, ):
-    enc_inputs = make_inputs(
-        encoder_input_data_names,
-        n_head,
-        d_model,
-        max_length,
-        is_pos=True,
-        slf_attn_bias_flag=True,
-        src_attn_bias_flag=False,
-        enc_output_flag=False,
-        data_shape_flag=True,
-        slf_attn_shape_flag=True,
-        src_attn_shape_flag=False)
+    enc_inputs = make_all_inputs(
+        encoder_data_input_fields + encoder_util_input_fields)
     enc_output = wrap_encoder(
         src_vocab_size,
         max_length,
@@ -547,18 +552,8 @@ def transformer(
         pos_pad_idx,
         enc_inputs, )
 
-    dec_inputs = make_inputs(
-        decoder_input_data_names,
-        n_head,
-        d_model,
-        max_length,
-        is_pos=True,
-        slf_attn_bias_flag=True,
-        src_attn_bias_flag=True,
-        enc_output_flag=False,
-        data_shape_flag=True,
-        slf_attn_shape_flag=True,
-        src_attn_shape_flag=True)
+    dec_inputs = make_all_inputs(
+        decoder_data_input_fields[:-1] + decoder_util_input_fields)
     predict = wrap_decoder(
         trg_vocab_size,
         max_length,
@@ -815,6 +810,7 @@ def wrap_decoder(trg_vocab_size,
             slf_attn_shape_flag=True,
             src_attn_shape_flag=True)
     else:
+        #print [(data.name, data.shape)for data in dec_inputs]
         trg_word, trg_pos, trg_slf_attn_bias, trg_src_attn_bias, \
         trg_data_shape, slf_attn_pre_softmax_shape, \
         slf_attn_post_softmax_shape, src_attn_pre_softmax_shape, \
@@ -855,3 +851,4 @@ def wrap_decoder(trg_vocab_size,
         shape=[-1, trg_vocab_size],
         act="softmax" if dec_inputs is None else None)
     return predict
+
