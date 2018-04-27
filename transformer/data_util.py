@@ -46,8 +46,9 @@ class Pool(object):
         if len(self._pool) != 0:
             raise Exception("Pool should be empty.")
 
-        if len(samples) > self._pool_size:
-            raise Exception("Push back too many samples.")
+        if len(samples) >= self._pool_size:
+            raise Exception("Capacity of pool should be greater than a batch. "
+                            "Please enlarge `pool_size`.")
 
         for sample in samples:
             self._pool.append(sample)
