@@ -4,10 +4,6 @@ import glob
 
 import random
 
-START_MARK = "<s>"
-END_MARK = "<e>"
-UNK_MARK = "<unk>"
-
 class SortType(object):
     GLOBAL = 'global'
     POOL = 'pool'
@@ -61,7 +57,6 @@ class Pool(object):
         else:
             return self._pool[0] if look else self._pool.pop(0)
 
-
 class DataReader(object):
     def __init__(self,
                  src_vocab_fpath,
@@ -78,6 +73,9 @@ class DataReader(object):
                  shuffle_batch=False,
                  use_token_batch=False,
                  delimiter='\t',
+                 start_mark='<s>',
+                 end_mark='<e>',
+                 unk_mark='<unk>',
                  seed=0):
         self._src_vocab = self._load_dict(src_vocab_fpath)
         self._only_src = True
@@ -98,8 +96,8 @@ class DataReader(object):
 
         src_seq_words, trg_seq_words = self._load_data(fpattern, tar_fname)
         self._src_seq_ids = [[
-            self._src_vocab.get(word, self._src_vocab.get(UNK_MARK))
-            for word in ([START_MARK] + src_seq_words + [END_MARK])]
+            self._src_vocab.get(word, self._src_vocab.get(unk_mark))
+            for word in ([start_mark] + src_seq_words + [end_mark])]
             for src_seq_words in src_seq_words
         ]
 
@@ -107,8 +105,8 @@ class DataReader(object):
 
         if not self._only_src:
             self._trg_seq_ids = [[
-                self._trg_vocab.get(word, self._trg_vocab.get(UNK_MARK))
-                for word in ([START_MARK] + trg_seq + [END_MARK])]
+                self._trg_vocab.get(word, self._trg_vocab.get(unk_mark))
+                for word in ([start_mark] + trg_seq + [end_mark])]
                 for trg_seq in trg_seq_words
             ]
             if len(self._trg_seq_ids) != self._sample_count:
