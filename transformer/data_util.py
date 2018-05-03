@@ -97,8 +97,8 @@ class DataReader(object):
         src_seq_words, trg_seq_words = self._load_data(fpattern, tar_fname)
         self._src_seq_ids = [[
             self._src_vocab.get(word, self._src_vocab.get(unk_mark))
-            for word in ([start_mark] + src_seq_words + [end_mark])]
-            for src_seq_words in src_seq_words
+            for word in ([start_mark] + src_seq + [end_mark])]
+            for src_seq in src_seq_words
         ]
 
         self._sample_count = len(self._src_seq_ids)
